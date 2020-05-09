@@ -7,7 +7,7 @@ import SigninUp from './pages/SigninUp';
 
 const App: React.FC = () => (
   <>
-    <SigninUp />
+    <SignIn />
     <GlobalStyle />
   </>
 );
