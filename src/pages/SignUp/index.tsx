@@ -1,13 +1,9 @@
-import React, { useCallback, useRef, useContext } from 'react';
-import { FiLogIn, FiMail, FiLock } from 'react-icons/fi';
+import React, { useCallback, useRef } from 'react';
+import { FiMail, FiLock, FiUser, FiArrowLeft } from 'react-icons/fi';
+import { FormHandles } from '@unform/core';
 import { Form } from '@unform/web';
 import * as Yup from 'yup';
-import { FormHandles } from '@unform/core';
 import { Link, useHistory } from 'react-router-dom';
-
-// Hooks
-import { useAuth } from '../../hooks/auth';
-import { useToast } from '../../hooks/toast';
 
 // Utils
 import getValidationErrors from '../../utils/getValidationErrors';
@@ -19,39 +15,47 @@ import logoImg from '../../assets/logo.svg';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 
+// Services
+import api from '../../services/api';
+
+import { useToast } from '../../hooks/toast';
+
 // Styles
 import { Container, Content, Background, AnimationContainer } from './styles';
 
-interface SigInFormData {
+interface SignUpFormData {
+  name: string;
   email: string;
-  password: string;
 }
 
-const SignIn: React.FC = () => {
+const SignUp: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
-
-  const { signIn, user } = useAuth();
   const { addToast } = useToast();
   const history = useHistory();
 
   const handleSubmit = useCallback(
-    async (data: SigInFormData) => {
+    async (data: object) => {
       try {
         formRef.current?.setErrors([]);
         const schema = Yup.object().shape({
+          name: Yup.string().required('Nome obrigatório'),
           email: Yup.string()
             .required('E-mail obrigatório')
             .email('Digite um e-mail válido'),
-          password: Yup.string().required('Senha obrigatória'),
+          password: Yup.string().min(6, 'No mínimo 6 dígitos'),
         });
+        console.log(data);
         await schema.validate(data, { abortEarly: false });
+        console.log(data);
+        await api.post('/users', data);
 
-        await signIn({
-          email: data.email,
-          password: data.password,
+        history.push('/');
+
+        addToast({
+          type: 'success',
+          title: 'Cadastro realizado!',
+          description: 'Você já pode fazer seu logon no GoBarber',
         });
-
-        history.push('/dashboard');
       } catch (error) {
         if (error instanceof Yup.ValidationError) {
           const erros = getValidationErrors(error);
@@ -60,21 +64,27 @@ const SignIn: React.FC = () => {
         }
         addToast({
           type: 'error',
-          title: 'Error na autenticação',
-          description: 'Ocorreu um erro ao fazer login, cheque as credenciais',
+          title: 'Error no cadastro',
+          description: 'Ocorreu um erro ao fazer o cadastro, tente novamente',
         });
       }
     },
-    [signIn, addToast, history]
+    [addToast, history]
   );
 
   return (
     <Container>
+      <Background />
       <Content>
         <AnimationContainer>
           <img src={logoImg} alt="GoBarber" />
-          <Form ref={formRef} onSubmit={handleSubmit}>
-            <h1>Faça seu login</h1>
+          <Form
+            ref={formRef}
+            initialData={{ name: 'Leandro' }}
+            onSubmit={handleSubmit}
+          >
+            <h1>Faça seu cadastro</h1>
+            <Input name="name" icon={FiUser} type="text" placeholder="Nome" />
             <Input
               name="email"
               icon={FiMail}
@@ -87,18 +97,17 @@ const SignIn: React.FC = () => {
               type="password"
               placeholder="Senha"
             />
-            <Button type="submit">Entrar</Button>
-            <a href="/">Esqueci minha senha</a>
+            <Button type="submit">Cadastrar</Button>
           </Form>
-          <Link to="signup">
-            <FiLogIn />
-            Criar conta
+
+          <Link to="/">
+            <FiArrowLeft />
+            Voltar para o logon
           </Link>
         </AnimationContainer>
       </Content>
-      <Background />
     </Container>
   );
 };
 
-export default SignIn;
+export default SignUp;
