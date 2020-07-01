@@ -14,7 +14,5 @@ describe('SigIn Page', () => {
     const { debug } = render(<SignIn />);
 
     debug();
-
-    expect(1 + 1).toBe(2);
   });
 });
